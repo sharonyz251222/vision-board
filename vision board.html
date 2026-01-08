@@ -271,4 +271,236 @@ const App = () => {
         <main className="max-w-7xl mx-auto px-6 py-10">
           <div className="flex justify-center gap-2 mb-10 overflow-x-auto pb-2 no-scrollbar">
             {['all', 'image', 'link', 'postcard'].map((tab) => (
-              <button key={tab} onClick={() => setActiveTab(tab)} className={`px-5 py-2 rounded-full whitespace-nowrap text-[9px] font-bold
+              <button key={tab} onClick={() => setActiveTab(tab)} className={`px-5 py-2 rounded-full whitespace-nowrap text-[9px] font-bold transition-all tracking-widest uppercase border ${activeTab === tab ? 'bg-indigo-400 border-indigo-400 text-white shadow-md' : 'bg-white text-slate-300 hover:text-indigo-400 border-slate-50'}`}>
+                {tab === 'all' ? 'All' : tab === 'image' ? 'Visions' : tab === 'link' ? 'Links' : 'Letters'}
+              </button>
+            ))}
+          </div>
+
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-8">
+            {filteredItems.map((item) => (
+              <div key={item.id} className="group relative">
+                {/* 刪除按鈕 */}
+                <button onClick={(e) => { e.stopPropagation(); setDeleteConfirm(item.id); }} className="absolute top-4 right-4 z-20 w-8 h-8 flex items-center justify-center bg-white/20 backdrop-blur-md hover:bg-rose-500 hover:text-white text-slate-400 rounded-full opacity-0 group-hover:opacity-100 transition-all border border-white/30">
+                  <Trash2 size={14} />
+                </button>
+
+                {/* 卡片容器：包含翻轉效果 */}
+                <div className={`perspective-1000 cursor-pointer aspect-[4/5]`} onClick={() => toggleFlip(item.id)}>
+                  <div className={`relative w-full h-full transition-transform duration-700 transform-style-3d ${flippedId === item.id ? 'rotate-y-180' : ''}`}>
+                    
+                    {/* 卡片正面 */}
+                    <div className="absolute inset-0 backface-hidden bg-white rounded-[2rem] overflow-hidden border border-rose-50/50 shadow-sm flex flex-col">
+                      {item.type === 'image' ? (
+                        <div className="relative flex-1 overflow-hidden bg-slate-50">
+                          <SmartImage src={item.content} alt={item.title} className="w-full h-full" />
+                          <div className="absolute top-4 left-4 px-3 py-1 bg-white/80 backdrop-blur-md text-[#1E293B] text-[8px] font-black tracking-widest uppercase rounded-full shadow-sm">
+                            {item.category}
+                          </div>
+                          {item.description && (
+                            <div className="absolute bottom-0 left-0 right-0 p-4 bg-gradient-to-t from-black/60 to-transparent flex justify-between items-end">
+                               <p className="text-white/90 text-[10px] italic line-clamp-2 leading-relaxed font-serif max-w-[80%]">{item.description}</p>
+                               <BookOpen size={14} className="text-white/60 mb-1" />
+                            </div>
+                          )}
+                        </div>
+                      ) : item.type === 'link' ? (
+                        <div className="flex-1 flex flex-col justify-center items-center bg-gradient-to-br from-indigo-50/30 via-white to-rose-50/30 p-8">
+                          <div className="w-14 h-14 bg-white rounded-3xl flex items-center justify-center shadow-sm mb-4 border border-indigo-50">
+                            <LinkIcon size={24} className="text-indigo-300" />
+                          </div>
+                          <p className="text-center font-serif italic text-base px-6 text-[#1E293B] line-clamp-2">{item.title}</p>
+                        </div>
+                      ) : (
+                        <div className="relative flex-1 overflow-hidden">
+                          <SmartImage src={item.coverImage} alt="Postcard" className="w-full h-full" />
+                          <div className="absolute inset-0 bg-gradient-to-t from-black/40 to-transparent"></div>
+                          <div className="absolute bottom-6 left-6 right-6">
+                            <div className="flex items-center gap-2 mb-2">
+                              <Mail size={12} className="text-white/80" />
+                              <span className="text-[8px] font-bold text-white/80 uppercase tracking-widest">Time Postcard</span>
+                            </div>
+                            <h3 className="text-white font-bold text-sm tracking-tight">{item.title}</h3>
+                          </div>
+                        </div>
+                      )}
+                      
+                      {/* 底部資訊欄 (正面) */}
+                      <div className="p-6 flex justify-between items-center bg-white border-t border-slate-50">
+                        <div className="overflow-hidden text-left">
+                          <h3 className="font-bold text-slate-700 truncate pr-2 tracking-tight text-xs uppercase">{item.title}</h3>
+                          <p className="text-[8px] font-medium text-slate-300 uppercase tracking-widest mt-0.5 italic truncate">By {item.authorName}</p>
+                        </div>
+                        <button onClick={(e) => handleLike(e, item.id)} className="flex items-center gap-1.5 p-2.5 bg-slate-50 rounded-2xl text-slate-200 hover:bg-rose-50 transition-colors">
+                          <Heart size={16} className={item.likes > 0 ? "fill-rose-500 text-rose-500" : ""} />
+                          <span className="text-[10px] font-bold">{item.likes}</span>
+                        </button>
+                      </div>
+                    </div>
+
+                    {/* 卡片背面 (願景與明信片共享翻轉邏輯) */}
+                    <div className="absolute inset-0 backface-hidden rotate-y-180 bg-white rounded-[2rem] overflow-hidden border border-rose-100 shadow-xl flex flex-col">
+                      {/* 願景版背面：圖片在底部 (高斯模糊裝飾) */}
+                      {item.type === 'image' ? (
+                        <div className="relative w-full h-full flex flex-col">
+                          <div className="absolute inset-0">
+                            <SmartImage src={item.content} alt="Background" className="w-full h-full opacity-20 blur-sm scale-110" />
+                          </div>
+                          <div className="relative z-10 flex-1 p-8 flex flex-col">
+                            <div className="flex justify-between items-start mb-6">
+                              <Sparkles size={18} className="text-indigo-300" />
+                              <div className="text-right">
+                                <span className="text-[8px] font-black text-indigo-400 uppercase tracking-widest">Vision Insight</span>
+                                <p className="text-[7px] text-slate-300 mt-1 uppercase tracking-tighter">{new Date(item.createdAt).toLocaleDateString()}</p>
+                              </div>
+                            </div>
+                            <div className="flex-1 overflow-y-auto no-scrollbar text-left pr-2">
+                              <h4 className="text-xs font-bold text-slate-800 mb-4 uppercase tracking-wider border-b border-indigo-100 pb-2">{item.title}</h4>
+                              <p className="font-serif italic text-sm text-slate-600 leading-relaxed whitespace-pre-wrap">
+                                {item.description || "這裡還沒有寫下更詳細的願景描述..."}
+                              </p>
+                            </div>
+                            <div className="pt-6 mt-auto border-t border-slate-100 flex justify-between items-center">
+                              <span className="text-[8px] font-bold text-slate-400 uppercase tracking-widest italic">Shared by {item.authorName}</span>
+                              <div className="px-3 py-1 bg-indigo-50 rounded-full text-[8px] font-bold text-indigo-300 uppercase">Read Mode</div>
+                            </div>
+                          </div>
+                        </div>
+                      ) : item.type === 'link' ? (
+                        <div className="w-full h-full p-8 flex flex-col justify-center items-center bg-slate-900 text-white text-center">
+                           <LinkIcon size={32} className="mb-6 text-indigo-400" />
+                           <h4 className="text-sm font-bold mb-4 px-4">{item.title}</h4>
+                           <a href={item.content} target="_blank" rel="noopener noreferrer" onClick={(e) => e.stopPropagation()} className="px-6 py-3 bg-indigo-500 hover:bg-indigo-400 rounded-2xl text-[10px] font-black uppercase tracking-widest transition-all">Open Link</a>
+                        </div>
+                      ) : (
+                        /* 明信片背面 */
+                        <div className="w-full h-full p-8 flex flex-col justify-between border-2 border-dashed border-rose-100">
+                           <div className="flex justify-between items-start">
+                             <div className="w-12 h-16 border border-slate-100 bg-slate-50/50 rounded-sm"></div>
+                             <div className="text-right">
+                               <p className="text-[8px] font-bold text-indigo-300 uppercase tracking-widest">Postage Paid</p>
+                               <p className="text-[7px] text-slate-300 uppercase">{item.deliveryDate || '2026-01-01'}</p>
+                             </div>
+                           </div>
+                           <div className="flex-1 my-6 overflow-y-auto no-scrollbar text-left">
+                             <p className="font-serif italic text-sm text-slate-600 leading-relaxed">「{item.content}」</p>
+                           </div>
+                           <div className="border-t border-slate-50 pt-4 flex justify-between items-center">
+                             <span className="text-[8px] font-bold text-slate-300 tracking-widest uppercase">To: Better Me</span>
+                             <span className="text-[8px] font-bold text-slate-400 uppercase tracking-widest italic">By: {item.authorName}</span>
+                           </div>
+                        </div>
+                      )}
+                    </div>
+                  </div>
+                </div>
+              </div>
+            ))}
+          </div>
+        </main>
+
+        <footer className="py-20 text-center border-t border-rose-50/20">
+          <p className="text-[8px] font-bold tracking-[0.5em] uppercase text-slate-300">MAKE TOMORROW BETTER</p>
+          <p className="text-[7px] font-medium tracking-[0.3em] uppercase text-slate-200 mt-2">© 2026 YIZZ_SS</p>
+        </footer>
+      </div>
+
+      {!isAuthorized && (
+        <div className="fixed inset-0 z-[100] flex items-center justify-center p-6 bg-[#E8E7F0]/20 backdrop-blur-md">
+          <div className="w-full max-w-sm bg-white/40 backdrop-blur-2xl border border-white/60 p-12 rounded-[3.5rem] shadow-xl text-center animate-in zoom-in duration-700">
+            <div className="w-20 h-20 flex items-center justify-center mx-auto mb-10 group">
+              <svg viewBox="0 0 100 100" className="w-10 h-10 text-[#9A98B0] opacity-80" fill="currentColor">
+                <circle cx="50" cy="38" r="15" />
+                <path d="M42 45 L58 45 L62 82 L38 82 Z" />
+              </svg>
+            </div>
+            <h2 className="text-[9px] font-black text-[#9A98B0] tracking-[1.2em] uppercase mb-12 pl-[1.2em]">Access Space</h2>
+            <form onSubmit={handlePassSubmit} className="space-y-8">
+              <input type="password" value={passwordInput} onChange={(e) => setPasswordInput(e.target.value)} placeholder="CODE" className={`w-full px-8 py-5 rounded-3xl bg-white/80 border text-center transition-all focus:outline-none tracking-[0.6em] text-xs font-black ${passError ? 'border-rose-200 text-rose-400 animate-shake' : 'border-transparent text-[#7C7A92] focus:bg-white'}`} />
+              <button type="submit" className="w-full bg-[#9A98B0]/80 hover:bg-[#7C7A92] text-white font-black py-5 rounded-3xl text-[9px] uppercase tracking-[0.4em]">Unlock</button>
+            </form>
+          </div>
+        </div>
+      )}
+
+      {deleteConfirm && (
+        <div className="fixed inset-0 z-[150] flex items-center justify-center p-4">
+          <div className="absolute inset-0 bg-[#1E293B]/20 backdrop-blur-sm" onClick={() => setDeleteConfirm(null)}></div>
+          <div className="bg-white p-10 rounded-[2.5rem] max-w-xs w-full text-center relative z-10 shadow-2xl animate-in zoom-in duration-200">
+            <h3 className="text-sm font-bold text-slate-700 mb-2">確定要刪除嗎？</h3>
+            <div className="grid grid-cols-2 gap-3 mt-8 text-center">
+              <button onClick={() => setDeleteConfirm(null)} className="py-4 rounded-2xl bg-slate-50 text-slate-400 text-[10px] font-black uppercase tracking-widest">取消</button>
+              <button onClick={handleDelete} className="py-4 rounded-2xl bg-rose-500 text-white text-[10px] font-black uppercase tracking-widest">刪除</button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {isModalOpen && isAuthorized && (
+        <div className="fixed inset-0 z-[110] flex items-center justify-center px-4">
+          <div className="absolute inset-0 bg-[#1E293B]/20 backdrop-blur-sm" onClick={() => setIsModalOpen(false)}></div>
+          <div className="bg-white rounded-[2.5rem] shadow-2xl w-full max-w-md overflow-hidden relative border border-rose-50 animate-in zoom-in duration-300">
+            <div className="p-8 pb-4 flex justify-between items-center border-b border-rose-50/50">
+              <h2 className="text-xl font-serif italic font-bold text-[#1E293B]">
+                {newType === 'image' ? 'Share Vision' : newType === 'link' ? 'Share Link' : 'Write Letter'}
+              </h2>
+              <button onClick={() => setIsModalOpen(false)} className="w-8 h-8 flex items-center justify-center bg-slate-50 rounded-full text-slate-300 hover:text-rose-500 transition-colors">
+                <X size={20} />
+              </button>
+            </div>
+            <div className="p-8 space-y-6 max-h-[70vh] overflow-y-auto no-scrollbar">
+              <div className="space-y-4 text-left">
+                <input type="text" value={inputAuthor} onChange={(e) => setInputAuthor(e.target.value)} placeholder="署名 (匿名或名字)" className="w-full px-5 py-3.5 rounded-xl bg-slate-50 border-transparent focus:bg-white focus:outline-none transition-all font-bold text-xs" />
+                <input type="text" value={inputTitle} onChange={(e) => setInputTitle(e.target.value)} placeholder={newType === 'postcard' ? '信件標題' : '標題'} className="w-full px-5 py-3.5 rounded-xl bg-slate-50 border-transparent focus:bg-white focus:outline-none transition-all font-bold text-xs" />
+                
+                {newType === 'image' && (
+                  <>
+                    <div className="flex gap-2">
+                      <input type="text" value={inputContent} onChange={(e) => setInputContent(e.target.value)} placeholder="願景圖片網址 (URL) 或點擊右側上傳" className="flex-1 px-5 py-3.5 rounded-xl bg-slate-50 border-transparent focus:bg-white focus:outline-none transition-all font-mono text-[9px]" />
+                      <button onClick={() => { fileInputRef.current.dataset.target='content'; fileInputRef.current.click(); }} className="px-4 bg-indigo-50 text-indigo-400 rounded-xl hover:bg-indigo-100 transition-colors flex items-center justify-center">
+                        {isUploading ? <Loader2 size={16} className="animate-spin" /> : <Upload size={16} />}
+                      </button>
+                    </div>
+                    <textarea value={inputDescription} onChange={(e) => setInputDescription(e.target.value)} rows={5} placeholder="願景內容描述 (長文會以翻轉閱讀)..." className="w-full px-5 py-3.5 rounded-2xl bg-slate-50 border-transparent focus:bg-white focus:outline-none transition-all font-serif italic text-sm resize-none" />
+                  </>
+                )}
+                {newType === 'link' && (
+                  <input type="text" value={inputContent} onChange={(e) => setInputContent(e.target.value)} placeholder="貼上 URL 連結" className="w-full px-5 py-3.5 rounded-xl bg-slate-50 border-transparent focus:bg-white focus:outline-none transition-all font-mono text-[9px]" />
+                )}
+                {newType === 'postcard' && (
+                  <>
+                    <div className="flex gap-2">
+                      <input type="text" value={inputImage} onChange={(e) => setInputImage(e.target.value)} placeholder="封面網址 (URL)" className="flex-1 px-5 py-3.5 rounded-xl bg-slate-50 border-transparent focus:bg-white focus:outline-none transition-all font-mono text-[9px]" />
+                      <button onClick={() => { fileInputRef.current.dataset.target='cover'; fileInputRef.current.click(); }} className="px-4 bg-indigo-50 text-indigo-400 rounded-xl hover:bg-indigo-100 transition-colors flex items-center justify-center">
+                        {isUploading ? <Loader2 size={16} className="animate-spin" /> : <Upload size={16} />}
+                      </button>
+                    </div>
+                    <textarea value={inputContent} onChange={(e) => setInputContent(e.target.value)} rows={5} placeholder="給未來的文字內容..." className="w-full px-5 py-3.5 rounded-2xl bg-slate-50 border-transparent focus:bg-white focus:outline-none transition-all font-serif italic text-sm resize-none" />
+                    <input type="date" value={inputDate} onChange={(e) => setInputDate(e.target.value)} className="w-full px-5 py-3.5 rounded-xl bg-slate-50 border-transparent focus:bg-white focus:outline-none transition-all font-black text-[9px] uppercase tracking-widest" />
+                  </>
+                )}
+                <input type="file" ref={fileInputRef} className="hidden" accept="image/*" onChange={(e) => handleFileUpload(e, fileInputRef.current.dataset.target === 'content' ? 'content' : 'cover')} />
+              </div>
+              <button onClick={handleAddItem} disabled={!inputContent || isUploading} className={`w-full font-bold py-5 rounded-2xl text-[10px] uppercase tracking-[0.2em] shadow-lg transition-all ${inputContent ? 'bg-[#1E293B] hover:bg-indigo-500 text-white shadow-rose-100' : 'bg-slate-100 text-slate-300 cursor-not-allowed shadow-none'}`}>
+                {isUploading ? '處理中...' : '發布'}
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      <style dangerouslySetInnerHTML={{ __html: `
+        @keyframes shake { 0%, 100% { transform: translateX(0); } 25% { transform: translateX(-5px); } 75% { transform: translateX(5px); } }
+        .animate-shake { animation: shake 0.2s both; }
+        .no-scrollbar::-webkit-scrollbar { display: none; }
+        .no-scrollbar { -ms-overflow-style: none; scrollbar-width: none; }
+        .perspective-1000 { perspective: 1000px; }
+        .transform-style-3d { transform-style: preserve-3d; }
+        .backface-hidden { backface-visibility: hidden; position: absolute; top: 0; left: 0; width: 100%; height: 100%; }
+        .rotate-y-180 { transform: rotateY(180deg); }
+      `}} />
+    </div>
+  );
+};
+
+export default App;
